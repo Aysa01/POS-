@@ -330,17 +330,17 @@ export function MenuScreen() {
     );
   });
   const productCards = (managing: boolean) => (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
       {products.filter(p => (p.name + ' ' + p.description).toLowerCase().includes(search.toLowerCase())).map((p, index) => {
         const selectedQuantity = cart.find(item => item.productId === p.id)?.quantity ?? 0;
         return <ProductTile key={p.id} testID={'product-' + p.id} selected={!managing && selectedQuantity > 0} style={[S.panel, {
-          width: width < 560 ? '100%' : '48%', padding: 12, gap: 16,
+          width: width < 560 ? '100%' : '48%', maxWidth: width < 560 ? 360 : 300, padding: 12, gap: 16,
           borderColor: !managing && selectedQuantity > 0 ? C.accent : C.line,
           opacity: p.available || managing ? 1 : 0.6,
         }]}>
           <View style={{ position: 'relative' }}>
-            {p.image ? <Image source={{ uri: p.image }} accessibilityLabel={p.name} style={{ height: width < 560 ? 220 : 240, width: '100%', borderRadius: 8 }} /> :
-              <View style={{ height: width < 560 ? 220 : 240, borderRadius: 8, backgroundColor: index % 2 ? '#E8EEDF' : '#F2E9DB', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            {p.image ? <Image source={{ uri: p.image }} accessibilityLabel={p.name} resizeMode="cover" style={{ aspectRatio: 3 / 4, width: '100%', borderRadius: 8 }} /> :
+              <View style={{ aspectRatio: 3 / 4, width: '100%', borderRadius: 8, backgroundColor: index % 2 ? '#E8EEDF' : '#F2E9DB', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                 <Coffee size={80} color={index % 2 ? '#516D42' : '#876644'} strokeWidth={1.1} />
                 <Text style={{ color: index % 2 ? '#435C36' : '#715334', fontSize: 13 }}>Your drink photo</Text>
               </View>}

@@ -242,6 +242,10 @@ function Workspace() {
         ))}
       </View>
       <View style={{ gap: 8 }}>
+        <View style={{ flexDirection: showLabels ? "row" : "column", gap: 8, paddingHorizontal: 4 }}>
+          <IconButton label="Refresh workspace" icon={RefreshCw} disabled={refreshing} onPress={() => void refresh()} />
+          <IconButton label="Device settings and backup" icon={Settings2} onPress={() => { setDrawer(false); setSettings(true); }} />
+        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Welcome screen"
@@ -305,50 +309,6 @@ function Workspace() {
           </Animated.View>
         )}
         <View style={S.flex}>
-          <View
-            style={[
-              S.row,
-              {
-                minHeight: 68,
-                paddingHorizontal: phone ? 16 : 24,
-                borderBottomWidth: 1,
-                borderColor: C.line,
-                backgroundColor: "#FFFFFF",
-              },
-            ]}
-          >
-            {phone && (
-              <IconButton
-                label="Open navigation"
-                icon={MenuIcon}
-                onPress={() => setDrawer(true)}
-              />
-            )}
-            <View style={S.flex}>
-              <Text style={{ color: C.ink, fontWeight: "700", fontSize: 16 }}>
-                {active}
-              </Text>
-              <Text style={{ color: C.muted, fontSize: 12 }}>
-                {active === "Menu" ? "Drinks & orders" : "Your local workspace"}
-              </Text>
-            </View>
-            {!phone && (
-              <Text style={{ color: C.accent, fontSize: 13 }}>
-                {new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · Offline ready
-              </Text>
-            )}
-            <IconButton
-              label="Refresh workspace"
-              icon={RefreshCw}
-              disabled={refreshing}
-              onPress={() => void refresh()}
-            />
-            <IconButton
-              label="Device settings and backup"
-              icon={Settings2}
-              onPress={() => setSettings(true)}
-            />
-          </View>
           {!!loadError && (
             <View style={{ padding: 16, gap: 10 }}>
               <ErrorMessage message={loadError} />
@@ -380,6 +340,11 @@ function Workspace() {
             <Stack.Screen name="Audit Logs" component={AuditScreen} />
             <Stack.Screen name="Analytics" component={AnalyticsScreen} />
           </Stack.Navigator>
+          {phone && (
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: C.surface, borderTopWidth: 1, borderColor: C.line }}>
+              <Button label="Open navigation" icon={MenuIcon} tone="secondary" onPress={() => setDrawer(true)} />
+            </View>
+          )}
         </View>
         {phone && (
           <View
