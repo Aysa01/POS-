@@ -1,0 +1,19 @@
+﻿# Rositrus local POS
+
+An offline beverage counter for Android and a local computer browser. A static background and Rositrus logo welcome the operator; tapping opens Menu directly into the drink menu with an order summary alongside it. There is no login, registration or credential editor. The welcome screen is not an authentication boundary. New audit records use Local counter as the counter identity; the staff name at checkout is separate metadata. Historical operator names and records remain intact.
+
+The menu has a light sidebar, dark navy actions, searchable drink cards, availability indicators and a right-hand order summary on desktop. Small screens stack checkout below the menu. Manage drinks supports names, prices, descriptions, photos and availability. Exactly two initial products, Drink 1 and Drink 2, start at PHP 0.00; no sample sales or orders are seeded.
+
+Cash/card/QR record operator-confirmed payments. Revenue counts only paid orders currently Done, by local completion date. Done receipts are finalized; earlier stages still allow backward correction. Reserved invoice numbers are persistent, unique and may have gaps. Checkout is idempotent; money uses integer centavos. No tax, service charge, cancellation or order deletion in v1. Product edits never change paid item snapshots.
+
+Android and browser databases are independent. Browser data stays in the profile's origin-private SQLite filesystem. Clearing storage or uninstalling removes local data; Android automatic backup is disabled. Manual passphrase-encrypted backups contain business tables and photos. Restore accepts only a fresh business database, retains local audit entries and appends imported audit records. Legacy credentials are excluded and are not needed to open the counter.
+
+Menu management supports removal using retained product rows, preserving paid receipts and historical photos. Database schema v4 upgrades existing records in place. Portable backup payload v4 retains removed drinks and finalized statuses; the importer also accepts v1-v3 backups. Active drink names remain unique. Payment confirmation is custom UI; success feedback follows database commit. Forward status moves are adjacent only; backward correction before Done remains allowed through dragging or Move.
+
+Product management takes place directly on the Menu grid. An Add drink button sits beside Finish managing in the header. There is no separate management-list popup; individual add/edit forms keep their existing dialogs.
+
+Order pipeline: In Queue, In Progress, Ready, Serving, Done. Serving sits between Ready and Done and does not count as completed revenue. Columns grow equally to fill the available desktop board width; compact screens retain readable horizontally scrolling columns. Schema v4 upgrades existing orders in place, preserving IDs, paid items, completion timestamps and audits. New backups use payload v4; v1-v3 backups remain accepted.
+
+Order-status cards use a white receipt layout with scalloped edges, the actual invoice and order ID, per-item line totals, total units, grand total, staff/date and current status. Move and Details retain their existing behavior.
+
+Finalized receipts: Done is terminal. Its drag gesture and Move action are unavailable, and the service plus a schema-v4 SQLite trigger reject changes to its status or completion timestamp. Existing completed records remain intact. Before Done, backward correction still works. A valid drag destination opens an animated receipt-height insertion slot, pushing the other receipts down. The arriving order takes the slot at the top; persisted audit sequence keeps arrival order after refresh. Invalid/cancelled drags close the slot without changing records. Reduced motion makes the same placement immediate. Backup payload v4 remains compatible with earlier v1-v3 imports.

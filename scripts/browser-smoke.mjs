@@ -1,0 +1,218 @@
+import { chromium, expect } from '@playwright/test';
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const context = await chromium.launchPersistentContext(resolve('.tools/browser-qa-' + Date.now()), { channel: 'msedge', headless: true, viewport: { width: 1440, height: 900 } });
+const page = context.pages()[0] ?? await context.newPage();
+const errors = [];
+page.on('pageerror', error => errors.push(error.message));
+page.on('dialog', dialog => { errors.push('Unexpected native browser dialog: ' + dialog.message()); void dialog.dismiss(); });
+const button = name => page.getByRole('button', { name, exact: true });
+const modal = title => page.getByRole('dialog').filter({ has: page.getByText(title, { exact: true }) }).filter({ visible: true });
+const close = async title => { await modal(title).getByRole('button', { name: 'Close dialog', exact: true }).click(); await expect(modal(title)).toHaveCount(0); };
+const enter = async () => { await expect(button('tap anywhere to start')).toBeVisible({ timeout: 30000 }); await button('tap anywhere to start').click(); await expect(button('Menu')).toBeVisible(); };
+try {
+  mkdirSync('artifacts/browser', { recursive: true });
+  await page.goto('http://localhost:8081', { waitUntil: 'domcontentloaded', timeout: 120000 });
+  await enter();
+  await page.screenshot({ path: 'artifacts/browser/welcome-entered-menu.png' });
+  await expect(button('Dashboard')).toHaveCount(0);
+  // Manage drinks is a content action, never a sidebar destination.
+  await expect(button('Manage drinks')).toHaveCount(1);
+  await page.getByLabel('Search menu').fill('no-such-drink');
+  await expect(page.getByText('No matching drinks', { exact: true })).toBeVisible();
+  await page.getByLabel('Search menu').fill('');
+  await button('Manage drinks').click();
+  await expect(button('Finish managing')).toBeVisible();
+  await expect(modal('Manage drinks')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/browser/inline-manage-desktop.png' });
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.screenshot({ path: 'artifacts/browser/inline-manage-phone.png' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await button('Edit Drink 1').click();
+  await expect(modal('Edit drink')).toBeVisible();
+  await page.getByLabel('Price (PHP)', { exact: true }).fill('75.50');
+  await button('Save drink').click();
+  await expect(modal('Edit drink')).toHaveCount(0);
+  for (const name of ['QA Matcha', 'QA Chocolate']) {
+    await button('Add drink').click();
+    await expect(modal('Add a drink')).toBeVisible();
+    await page.getByLabel('Drink name', { exact: true }).fill(name);
+    await page.getByLabel('Price (PHP)', { exact: true }).fill('90.00');
+    if (name === 'QA Chocolate') {
+      const chooserPromise = page.waitForEvent('filechooser');
+      await button('Choose photo').click();
+      const chooser = await chooserPromise;
+      await chooser.setFiles({ name: 'qa-image.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGlsAAAAASUVORK5CYII=', 'base64') });
+      await expect(page.getByLabel('Selected drink photo')).toBeVisible();
+    }
+    await button('Save drink').click();
+    await expect(modal('Add a drink')).toHaveCount(0);
+  }
+  await button('Finish managing').click();
+  await button('Add to order').first().click();
+  await button('Welcome screen').click();
+  await modal('Return to welcome and clear this draft?').getByRole('button', { name: 'Keep working', exact: true }).click();
+  await expect(page.getByLabel('Customer name', { exact: true }).filter({ visible: true })).toBeVisible();
+  await button('Welcome screen').click();
+  await modal('Return to welcome and clear this draft?').getByRole('button', { name: 'Return to welcome', exact: true }).click();
+  await enter();
+  await expect(page.getByText('No products selected', { exact: true })).toBeVisible();
+  const tile = page.getByTestId('product-initial-1').filter({ visible: true });
+  const tileBox = await tile.boundingBox();
+  if (tileBox.width < 350 || tileBox.height < 400) throw new Error('Product cards are too small for the small catalog');
+  await page.screenshot({ path: 'artifacts/browser/menu-four-products.png' });
+  // A receipt already in the destination must make room for a dragged arrival.
+  await tile.getByRole('button', { name: 'Add to order', exact: true }).click();
+  await page.getByLabel('Customer name', { exact: true }).filter({ visible: true }).fill('Target QA');
+  await page.getByLabel('Staff name', { exact: true }).filter({ visible: true }).fill('Browser counter');
+  await button('Process transaction').click();
+  await modal('Confirm payment received').getByRole('button', { name: 'Confirm payment', exact: true }).click();
+  await expect(button('View receipt')).toBeVisible();
+  await button('Orders').click();
+  const destinationReceipt = () => page.locator('[data-testid^="order-"]').filter({ has: page.getByText('Target QA', { exact: true }) }).filter({ visible: true });
+  await destinationReceipt().getByRole('button', { name: 'Move', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await button('In Progress').click();
+  await expect(destinationReceipt().getByText('In Progress', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await button('Menu').click();
+  await tile.getByRole('button', { name: 'Add to order', exact: true }).click();
+  await button('Increase Drink 1 quantity').click();
+  await expect(tile.getByText('2 in current order', { exact: true })).toBeVisible();
+  await page.getByLabel('Customer name', { exact: true }).filter({ visible: true }).fill('Browser QA');
+  await page.getByLabel('Staff name', { exact: true }).filter({ visible: true }).fill('Browser counter');
+  await button('Process transaction').click();
+  await expect(modal('Confirm payment received')).toContainText('151.00 via Cash');
+  await modal('Confirm payment received').getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(modal('Confirm payment received')).toHaveCount(0);
+  await expect(page.getByLabel('Customer name', { exact: true }).filter({ visible: true })).toHaveValue('Browser QA');
+  await button('Process transaction').click();
+  await expect(modal('Confirm payment received')).toBeVisible();
+  await page.screenshot({ path: 'artifacts/browser/payment-confirmation.png' });
+  await modal('Confirm payment received').getByRole('button', { name: 'Confirm payment', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('Payment Received Successfully!', { exact: true })).toBeVisible();
+  await expect(button('View receipt')).toBeVisible();
+  await expect(button('Dismiss notification').locator('../..')).toHaveCSS('opacity', '1');
+  await page.screenshot({ path: 'artifacts/browser/payment-toast.png' });
+  await expect(page.getByText('Payment Received Successfully!', { exact: true })).toBeHidden({ timeout: 5500 });
+  await button('View receipt').click();
+  await expect(page.getByRole('dialog').getByText('\u20b1151.00', { exact: true }).last()).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await button('Orders').click();
+  await expect(page.getByTestId('column-Serving').filter({ visible: true })).toBeVisible();
+  await expect(page.getByTestId('column-Done').filter({ visible: true })).toBeInViewport({ ratio: 0.95 });
+  await page.screenshot({ path: 'artifacts/browser/five-stage-board.png' });
+  const card = page.locator('[data-testid^="order-"]').filter({ has: page.getByText('Browser QA', { exact: true }) }).filter({ visible: true });
+  const drag = async status => {
+    const start = await card.boundingBox(), target = await page.getByTestId('column-' + status).filter({ visible: true }).boundingBox();
+    await page.mouse.move(start.x + 130, start.y + 65); await page.mouse.down();
+    await page.mouse.move(target.x + 110, start.y + 65, { steps: 20 }); await page.mouse.up();
+  };
+  await drag('Ready');
+  await expect(page.getByText('Invalid Order Movement', { exact: true })).toBeVisible();
+  await expect(card.getByText('In Queue', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('dragged-order-preview')).toHaveCount(0);
+  await page.screenshot({ path: 'artifacts/browser/invalid-movement.png' });
+  await expect(page.getByText('Invalid Order Movement', { exact: true })).toBeHidden({ timeout: 5000 });
+  const oldPosition = await destinationReceipt().boundingBox();
+  const sourcePosition = await card.boundingBox();
+  const progressColumn = await page.getByTestId('column-In Progress').filter({ visible: true }).boundingBox();
+  // Cancelling a valid hover closes its space and leaves both orders untouched.
+  await page.mouse.move(sourcePosition.x + 100, sourcePosition.y + 90); await page.mouse.down();
+  await page.mouse.move(progressColumn.x + 90, sourcePosition.y + 90, { steps: 20 });
+  await expect.poll(async () => await page.getByTestId('column-In Progress').filter({ visible: true }).getByTestId('drop-slot-In Progress').evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(sourcePosition.height * 0.8);
+  await page.mouse.move(progressColumn.x + 90, 130, { steps: 12 }); await page.mouse.up();
+  await expect(page.getByTestId('dragged-order-preview')).toHaveCount(0);
+  await expect.poll(async () => await page.getByTestId('column-In Progress').filter({ visible: true }).getByTestId('drop-slot-In Progress').evaluate(element => element.getBoundingClientRect().height)).toBe(0);
+  await expect(card.getByText('In Queue', { exact: true })).toBeVisible();
+  await expect(destinationReceipt().getByText('In Progress', { exact: true })).toBeVisible();
+  await destinationReceipt().evaluate(element => {
+    window.receiptMotionSamples = [];
+    const until = performance.now() + 1200;
+    const sample = () => { window.receiptMotionSamples.push(element.getBoundingClientRect().top); if (performance.now() < until) requestAnimationFrame(sample); };
+    requestAnimationFrame(sample);
+  });
+  await page.mouse.move(sourcePosition.x + 100, sourcePosition.y + 90); await page.mouse.down();
+  await page.mouse.move(progressColumn.x + 90, sourcePosition.y + 90, { steps: 20 });
+  await expect.poll(async () => await page.getByTestId('column-In Progress').filter({ visible: true }).getByTestId('drop-slot-In Progress').evaluate(element => element.getBoundingClientRect().height)).toBeGreaterThan(sourcePosition.height * 0.8);
+  const displaced = await destinationReceipt().boundingBox();
+  if (displaced.y < oldPosition.y + sourcePosition.height * 0.8) throw new Error('Existing receipt did not move down for the incoming receipt');
+  await page.screenshot({ path: 'artifacts/browser/receipt-insertion-animation.png' });
+  const samples = await page.evaluate(() => window.receiptMotionSamples);
+  if (!samples.some(value => value > oldPosition.y + 5 && value < displaced.y - 5)) throw new Error('Receipt movement did not include intermediate animation frames');
+  await page.mouse.up();
+  await expect(card.getByText('In Progress', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('dragged-order-preview')).toHaveCount(0);
+  if ((await card.boundingBox()).y >= (await destinationReceipt().boundingBox()).y) throw new Error('Arriving receipt was not inserted above the existing receipt');
+  await expect(page.getByText('Order updated successfully', { exact: true })).toBeVisible();
+  await card.getByRole('button', { name: 'Move', exact: true }).click();
+  await button('Done').click();
+  await expect(page.getByText('Invalid Order Movement', { exact: true })).toBeVisible();
+  await expect(card.getByText('In Progress', { exact: true })).toBeVisible();
+  await card.getByRole('button', { name: 'Move', exact: true }).click();
+  await button('In Queue').click();
+  await expect(card.getByText('In Queue', { exact: true })).toBeVisible();
+  for (const status of ['In Progress', 'Ready', 'Serving', 'Done']) {
+    await card.getByRole('button', { name: 'Move', exact: true }).click();
+    await button(status).click();
+    await expect(card.getByText(status, { exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    if (status === 'Serving') {
+      await page.screenshot({ path: 'artifacts/browser/serving-order.png' });
+      await button('Analytics').click();
+      await expect(page.getByText('\u20b1151.00', { exact: true }).filter({ visible: true })).toHaveCount(0);
+      await button('Orders').click();
+    }
+  }
+  await expect(page.getByText('Order completed successfully', { exact: true })).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Move', exact: true })).toHaveCount(0);
+  await expect(card.getByText('Finalized', { exact: true })).toBeVisible();
+  await page.screenshot({ path: 'artifacts/browser/finalized-receipt.png' });
+  await expect(page.getByTestId('dragged-order-preview')).toHaveCount(0);
+  await drag('Ready');
+  await expect(page.getByTestId('dragged-order-preview')).toHaveCount(0);
+  await expect(card.getByText('Done', { exact: true })).toBeVisible();
+  await card.getByRole('button', { name: 'Details', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await button('Order History').click();
+  await expect(page.getByText('Browser QA', { exact: true }).filter({ visible: true })).toBeVisible();
+  await button('Analytics').click();
+  await expect(page.getByText('\u20b1151.00', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await page.reload(); await enter();
+  await button('Analytics').click();
+  await expect(page.getByText('\u20b1151.00', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await button('Menu').click();
+  // Menu and management still work with reduced-motion enabled.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await button('Manage drinks').click();
+  await expect(button('Finish managing')).toBeVisible();
+  await expect(modal('Manage drinks')).toHaveCount(0);
+  await button('Edit Drink 1').click();
+  await expect(modal('Edit drink')).toBeVisible();
+  await modal('Edit drink').getByRole('button', { name: 'Delete drink', exact: true }).click();
+  await modal('Remove this drink?').getByRole('button', { name: 'Delete drink', exact: true }).click();
+  await expect(modal('Edit drink')).toHaveCount(0);
+  await expect(button('Edit Drink 1')).toHaveCount(0);
+  await button('Finish managing').click();
+  await button('Order History').click();
+  await expect(page.getByText('Browser QA', { exact: true }).filter({ visible: true })).toBeVisible();
+  await button('Analytics').click();
+  await expect(page.getByText('\u20b1151.00', { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await button('Menu').click();
+  for (const width of [1440, 800, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: 'artifacts/browser/menu-' + width + '.png' });
+  }
+  if (errors.length) throw new Error(errors.join('\n'));
+  console.log('MENU, LARGE CARDS, MANAGEMENT, CUSTOM PAYMENT/CANCEL/TOAST, INVALID DRAG/MOVE, VALID/BACKWARD STATUS, HISTORY AND RELOAD PASSED');
+} catch (error) {
+  await page.screenshot({ path: 'artifacts/browser/failure.png' });
+  console.log('Visible dialogs:', await page.getByRole('dialog').allTextContents());
+  throw error;
+} finally { await context.close(); }

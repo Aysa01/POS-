@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+/android/
+/ios/
+modules/**/android/build/
+modules/**/android/.gradle/
+modules/**/android/.cxx/
+dist/
+dist-web/
+artifacts/
+.tools/
+*.keystore
+*.jks
+credentials.json
+.env*
+!.env.example
+*.log

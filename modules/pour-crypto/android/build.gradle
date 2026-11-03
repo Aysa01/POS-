@@ -1,0 +1,10 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+group = 'com.pour.localpos'
+version = '1.0.0'
+android {
+  namespace 'expo.modules.pourcrypto'
+  defaultConfig { versionCode 1; versionName '1.0.0' }
+}
