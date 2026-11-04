@@ -88,7 +88,7 @@ export function LoginScreen({
         >
           <View style={S.row}>
             <View
-              style={{ backgroundColor: C.dark, borderRadius: 16, padding: 14 }}
+              style={{ backgroundColor: C.ink, borderRadius: 16, padding: 14 }}
             >
               <Coffee size={32} color="white" />
             </View>

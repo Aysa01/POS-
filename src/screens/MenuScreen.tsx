@@ -214,7 +214,8 @@ const checkoutValidation = z.object({
   staff: z.string().trim().min(1, "Enter the staff name.").max(100),
 });
 export function MenuScreen() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const productImageHeight = Math.max(100, Math.min(240, height - 430));
   const wide = width >= 1000;
   const { products, cart, add, remove, quantity } = usePOS();
   const [manage, setManage] = useState(false),
@@ -334,13 +335,13 @@ export function MenuScreen() {
       {products.filter(p => (p.name + ' ' + p.description).toLowerCase().includes(search.toLowerCase())).map((p, index) => {
         const selectedQuantity = cart.find(item => item.productId === p.id)?.quantity ?? 0;
         return <ProductTile key={p.id} testID={'product-' + p.id} selected={!managing && selectedQuantity > 0} style={[S.panel, {
-          width: width < 560 ? '100%' : '48%', maxWidth: width < 560 ? 360 : 300, padding: 12, gap: 16,
+          width: width < 560 ? '100%' : '48%', maxWidth: width < 560 ? 360 : 300, padding: 12, gap: 12,
           borderColor: !managing && selectedQuantity > 0 ? C.accent : C.line,
           opacity: p.available || managing ? 1 : 0.6,
         }]}>
           <View style={{ position: 'relative' }}>
-            {p.image ? <Image source={{ uri: p.image }} accessibilityLabel={p.name} resizeMode="cover" style={{ aspectRatio: 3 / 4, width: '100%', borderRadius: 8 }} /> :
-              <View style={{ aspectRatio: 3 / 4, width: '100%', borderRadius: 8, backgroundColor: index % 2 ? '#E8EEDF' : '#F2E9DB', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            {p.image ? <Image source={{ uri: p.image }} accessibilityLabel={p.name} resizeMode="cover" style={{ height: productImageHeight, width: '100%', borderRadius: 8 }} /> :
+              <View style={{ height: productImageHeight, width: '100%', borderRadius: 8, backgroundColor: index % 2 ? '#E8EEDF' : '#F2E9DB', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                 <Coffee size={80} color={index % 2 ? '#516D42' : '#876644'} strokeWidth={1.1} />
                 <Text style={{ color: index % 2 ? '#435C36' : '#715334', fontSize: 13 }}>Your drink photo</Text>
               </View>}
@@ -358,7 +359,7 @@ export function MenuScreen() {
             if (managing) { setEditing(p); setEditor(true); }
             else { add(p); setError(''); setSuccess(''); }
           }} style={{ minHeight: 50 }} />
-          {!managing && selectedQuantity > 0 && <Text accessibilityLiveRegion="polite" style={{ color: C.accent, fontSize: 13, textAlign: 'center', fontWeight: '600' }}>{selectedQuantity} in current order</Text>}
+          {!managing && selectedQuantity > 0 && <Text accessibilityLiveRegion="polite" style={{ color: C.brandInk, fontSize: 13, textAlign: 'center', fontWeight: '600' }}>{selectedQuantity} in current order</Text>}
         </ProductTile>;
       })}
     </View>
@@ -370,13 +371,13 @@ export function MenuScreen() {
     </View> : <Button label="Manage drinks" icon={Edit3} tone="secondary" onPress={() => setManage(true)} />} />
     <TextInput accessibilityLabel="Search menu" placeholder="Search menu" placeholderTextColor={C.muted} value={search} onChangeText={setSearch} style={{ backgroundColor: C.surface, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 14, height: 44, color: C.ink, fontSize: 14 }} />
     {products.some(p => p.price === 0) && <Text style={S.muted}>Some drinks are priced at PHP 0.00. Use Manage drinks to set your prices before taking payments.</Text>}
-    <View style={[S.row, { justifyContent: 'space-between' }]}><Text style={S.h2}>Drinks</Text><Text style={S.muted}>{products.filter(p => p.available).length} available</Text></View>
+
     {productCards(manage)}
     {!products.some(p => (p.name + ' ' + p.description).toLowerCase().includes(search.toLowerCase())) && <Empty icon={Coffee} title="No matching drinks" detail="Try another name or description, or add a drink with Manage drinks." />}
   </>;
   const summary = <View style={[S.panel, { width: wide ? 350 : '100%', flexGrow: 1, minHeight: wide ? 650 : undefined }]}>
-    <View style={[S.row, { justifyContent: 'space-between' }]}><Text style={{ color: C.ink, fontSize: 16, fontWeight: '600' }}>Order summary</Text><ShoppingBag size={22} color={C.accent} /></View>
-    {!!success && <Text accessibilityLiveRegion="polite" style={{ color: C.accent, fontWeight: '600' }}>{success}</Text>}
+    <View style={[S.row, { justifyContent: 'space-between' }]}><Text style={{ color: C.ink, fontSize: 16, fontWeight: '600' }}>Order summary</Text><ShoppingBag size={22} color={C.brandInk} /></View>
+    {!!success && <Text accessibilityLiveRegion="polite" style={{ color: C.brandInk, fontWeight: '600' }}>{success}</Text>}
     {!!success && !!lastOrder && <Button label="View receipt" tone="secondary" onPress={() => setReceipt(lastOrder)} />}
     <ErrorMessage message={error || reservationError || totalError} />
     {!!reservationError && <Button label="Retry invoice reservation" tone="secondary" onPress={() => void reserve()} />}

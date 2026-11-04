@@ -17,7 +17,7 @@ import {
   Sheet,
   showError,
 } from "../components/ui";
-import { StatusBadge, statusColors } from "../components/StatusBadge";
+import { statusColors } from "../components/StatusBadge";
 import { OrderTicket } from "../components/OrderTicket";
 import { OrderDetails } from "../components/OrderDetails";
 import { usePOS } from "../store/usePOS";
@@ -37,7 +37,7 @@ function PipelineColumn({ status, width, invalid, register, children }: { status
     animation.start(({ finished }) => { if (finished) setHighlight(false); });
     return () => { animation.stop(); offset.setValue(0); };
   }, [invalid, reduced, offset]);
-  return <NativeAnimated.View ref={register} testID={'column-' + status} style={{ width, backgroundColor: highlight ? '#FCECEE' : '#E7EDE8', borderWidth: 1, borderColor: highlight ? C.danger : 'transparent', borderRadius: 16, padding: 12, transform: [{ translateX: offset }] }}>{children}</NativeAnimated.View>;
+  return <NativeAnimated.View ref={register} testID={'column-' + status} style={{ width, backgroundColor: highlight ? '#FCECEE' : '#E7EDF4', borderWidth: 1, borderColor: highlight ? C.danger : 'transparent', borderRadius: 16, padding: 12, transform: [{ translateX: offset }] }}>{children}</NativeAnimated.View>;
 }
 
 function InsertionSlot({ status, height, consumed }: { status: Status; height: number; consumed: boolean }) {
@@ -51,7 +51,7 @@ function InsertionSlot({ status, height, consumed }: { status: Status; height: n
   }, [height, consumed, reduced, size]);
   return <NativeAnimated.View pointerEvents="none" testID={'drop-slot-' + status} style={{ height: consumed ? 0 : size, overflow: 'hidden' }}>
     {height > 0 && !consumed && <View style={{ flex: 1, marginBottom: 16, borderWidth: 1, borderStyle: 'dashed', borderColor: C.accent, borderRadius: 8, backgroundColor: '#FFFFFF66', alignItems: 'center', paddingTop: 18 }}>
-      <Text style={{ color: C.accent, fontSize: 12, fontWeight: '600' }}>Drop receipt here</Text>
+      <Text style={{ color: C.brandInk, fontSize: 12, fontWeight: '600' }}>Drop receipt here</Text>
     </View>}
   </NativeAnimated.View>;
 }
@@ -297,22 +297,16 @@ export function OrdersScreen() {
                   columnRefs.current[status] = ref;
                 }}
               >
-                <View
-                  style={[
-                    S.row,
-                    {
-                      padding: 6,
-                      paddingBottom: 18,
-                      justifyContent: "space-between",
-                    },
-                  ]}
-                >
-                  <StatusBadge status={status} emphasized />
-                  <Text
-                    style={{ color: C.ink, fontWeight: "700", fontSize: 16 }}
-                  >
-                    {rows.length}
-                  </Text>
+                <View style={[S.row, { backgroundColor: C.surface, borderRadius: 11, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12, justifyContent: "space-between", gap: 8 }]}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1 }}>
+                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: statusColors[status].bg, alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: { "In Queue": "#F59E0B", "In Progress": "#2563EB", Ready: "#9333EA", Serving: "#F97316", Done: "#22A06B" }[status] }} />
+                    </View>
+                    <Text accessibilityRole="header" style={{ color: C.ink, fontWeight: "700", fontSize: 11, letterSpacing: 0.6 }}>{status.toUpperCase()}</Text>
+                  </View>
+                  <View style={{ backgroundColor: C.pale, borderWidth: 1, borderColor: C.line, minWidth: 24, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ color: C.muted, fontWeight: "600", fontSize: 11 }}>{rows.length}</Text>
+                  </View>
                 </View>
                 <FlatList
                   data={rows}

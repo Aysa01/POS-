@@ -21,16 +21,18 @@ import { usePOS } from '../store/usePOS';
 import { useReducedMotion } from '../utils/useReducedMotion';
 
 export const C = {
+  brand: "#D96B7C",
+  brandInk: "#54232E",
   bg: "#F7F9FA",
   surface: "#FFFFFF",
   ink: "#1C2B39",
   muted: "#687580",
-  accent: "#1C2B39",
+  accent: "#D96B7C",
   pale: "#F0F3F5",
   line: "#E3E7EA",
   danger: "#A12D36",
   warning: "#86530D",
-  dark: "#1C2B39",
+  dark: "#D96B7C",
 };
 export const S = StyleSheet.create({
   page: { padding: 24, gap: 24, paddingBottom: 48 },
@@ -94,7 +96,7 @@ export function Button({
   style?: StyleProp<ViewStyle>;
 }) {
   const color =
-    tone === "primary" ? "#FFFFFF" : tone === "danger" ? C.danger : C.accent;
+    tone === "primary" ? "#FFFFFF" : tone === "danger" ? C.danger : C.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -114,7 +116,7 @@ export function Button({
           gap: 8,
           backgroundColor:
             tone === "primary"
-              ? C.accent
+              ? C.brand
               : tone === "secondary"
                 ? C.pale
                 : "transparent",
@@ -158,11 +160,11 @@ export function IconButton({
         borderRadius: 10,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: pressed ? C.line : C.pale,
+        backgroundColor: pressed ? C.brand : C.pale,
         opacity: disabled ? 0.4 : 1,
       })}
     >
-      <Icon color={C.ink} size={19} strokeWidth={1.8} />
+      {({ pressed }) => <Icon color={pressed ? "#FFFFFF" : C.ink} size={19} strokeWidth={1.8} />}
     </Pressable>
   );
 }
@@ -237,7 +239,7 @@ export function Empty({
       }}
     >
       <View style={{ backgroundColor: C.pale, padding: 18, borderRadius: 40 }}>
-        <Icon size={28} color={C.accent} strokeWidth={1.5} />
+        <Icon size={28} color={C.brandInk} strokeWidth={1.5} />
       </View>
       <Text style={[S.h2, { textAlign: "center" }]}>{title}</Text>
       <Text style={[S.muted, { textAlign: "center", maxWidth: 340 }]}>

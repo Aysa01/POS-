@@ -62,7 +62,7 @@ export function Toast() {
   const error = notice.tone === 'error';
   const Icon = error ? AlertCircle : CheckCircle2;
   return <Animated.View pointerEvents="box-none" style={{ position: 'absolute', right: 16, bottom: bottom + 16, width: Math.min(380, width - 32), zIndex: 1000, elevation: 20, opacity: progress, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [reduced ? 0 : 18, 0] }) }] }}>
-    <View pointerEvents="box-none" accessibilityRole={error ? 'alert' : undefined} accessibilityLiveRegion="polite" style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.line, padding: 16, flexDirection: 'row', gap: 12, boxShadow: '0px 6px 24px #1C2B3920' }}>
+    <View pointerEvents="box-none" accessibilityRole={error ? 'alert' : undefined} accessibilityLiveRegion="polite" style={{ backgroundColor: C.surface, borderRadius: 12, borderWidth: 1, borderColor: C.line, padding: 16, flexDirection: 'row', gap: 12, boxShadow: '0px 6px 24px #234C4320' }}>
       <View pointerEvents="none"><Icon size={24} color={error ? C.danger : '#21845F'} /></View>
       <View pointerEvents="none" style={{ flex: 1, gap: 5 }}><Text style={{ color: C.ink, fontWeight: '700', fontSize: 14 }}>{notice.title}</Text>{!!notice.message && <Text style={{ color: C.muted, fontSize: 13, lineHeight: 20 }}>{notice.message}</Text>}</View>
       <Pressable accessibilityRole="button" accessibilityLabel="Dismiss notification" onPress={() => usePOS.getState().notify('')} style={{ width: 44, height: 44, margin: -8, alignItems: 'center', justifyContent: 'center' }}><X size={17} color={C.muted} /></Pressable>

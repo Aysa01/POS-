@@ -173,7 +173,7 @@ function Workspace() {
         {showLabels ? (
           <Text
             style={{
-              color: C.dark,
+              color: C.brandInk,
               fontSize: 28,
               fontWeight: "800",
               letterSpacing: -1,
@@ -322,7 +322,7 @@ function Workspace() {
             <View
               style={[S.row, { paddingHorizontal: 24, paddingVertical: 8 }]}
             >
-              <ActivityIndicator size="small" color={C.accent} />
+              <ActivityIndicator size="small" color={C.brandInk} />
               <Text style={S.muted}>Reading local data…</Text>
             </View>
           )}
@@ -412,7 +412,7 @@ function Root() {
       <StatusBar style="dark" />
       {!ready ? (
         <View style={[S.page, { flex: 1, justifyContent: "center" }]}>
-          <Coffee size={40} color={C.accent} />
+          <Coffee size={40} color={C.brandInk} />
           <Text style={S.title}>
             {error ? "Your counter needs attention" : "Opening your counter"}
           </Text>
